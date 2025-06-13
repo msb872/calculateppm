@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاسبه ppm</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            direction: rtl;
+            background-color: #f4f4f4;
+        }
+        .welcome-container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .welcome-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        .container {
+            display: none;
+            width: 50%;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #datetime {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            margin: 20px auto;
+            width: 80%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        th {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body onload="updateDateTime()">
+
+    <div class="welcome-container" id="welcome-screen">
+        <div class="welcome-box">
+            <h2>به ابزار محاسبه ppm خوش آمدید!</h2>
+            <p>تهیه کننده برنامه: مصیب خانی.</p>
+	     <p>کارشناس کنترل کیفیت کارخانه یک ویک دشت مرغاب.</p>
+	    <p>لطفاً روی دکمه زیر کلیک کنید تا وارد شوید.</p>
+            <button onclick="startApp()">شروع</button>
+        </div>
+    </div>
+
+    <div class="container" id="main-container">
+        <div id="datetime"></div>
+
+        <h2>محاسبه مقدار ماده برای ppm مشخص</h2>
+
+        <label>مقدار ppm مورد نیاز:</label>
+        <input type="number" id="ppm" placeholder="مثلاً 100"><br>
+
+        <label>خلوص ماده (%) :</label>
+        <input type="number" id="purity" placeholder="مثلاً 65"><br>
+
+        <label>حجم محلول (mL) :</label>
+        <input type="number" id="volume" placeholder="مثلاً 1000"><br>
+
+        <button onclick="calculate()">محاسبه</button>
+        <button onclick="clearTable()">پاک کردن جدول</button>
+        <button onclick="saveResult()">ذخیره HTML</button>
+        <button onclick="downloadCSV()">دانلود CSV</button>
+        <button onclick="printResult()">چاپ</button>
+    </div>
+
+    <table id="result-table">
+        <thead>
+            <tr>
+                <th>required ppm</th>
+                <th>Purity of the substance(%)</th>
+                <th>Volume of the solution (L)</th>
+                <th>Amount of substance  (mg)</th>
+                <th>Amount of substance  (g)</th>
+            </tr>
+        </thead>
+        <tbody id="result-body"></tbody>
+    </table>
+
+    <script>
+        function startApp() {
+            document.getElementById("welcome-screen").style.display = "none";
+            document.getElementById("main-container").style.display = "block";
+        }
+
+        function updateDateTime() {
+            let now = new Date();
+            let dateTimeString = now.toLocaleString('fa-IR');
+            document.getElementById("datetime").innerText = "تاریخ و ساعت: " + dateTimeString;
+            setTimeout(updateDateTime, 1000);
+        }
+
+        function calculate() {
+            let ppm = document.getElementById("ppm").value;
+            let purity = document.getElementById("purity").value;
+            let volume = document.getElementById("volume").value;
+
+            if (ppm && purity && volume) {
+                let requiredMassMg = (ppm * volume) / (purity / 100);
+                let requiredMassG = requiredMassMg / 1000;
+                let tableBody = document.getElementById("result-body");
+
+                let newRow = tableBody.insertRow();
+                newRow.insertCell(0).innerText = ppm;
+                newRow.insertCell(1).innerText = purity;
+                newRow.insertCell(2).innerText = volume;
+                newRow.insertCell(3).innerText = requiredMassMg.toFixed(2);
+                newRow.insertCell(4).innerText = requiredMassG.toFixed(4);
+
+                document.getElementById("ppm").value = "";
+                document.getElementById("purity").value = "";
+                document.getElementById("volume").value = "";
+                document.getElementById("ppm").focus();
+            } else {
+                alert("لطفاً تمامی مقادیر را وارد کنید.");
+            }
+        }
+
+        function clearTable() {
+            document.getElementById("result-body").innerHTML = "";
+        }
+
+        function saveResult() {
+            let tableText = document.getElementById("result-table").outerHTML;
+            let blob = new Blob([tableText], { type: "text/html" });
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "ppm_results.html";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function downloadCSV() {
+            let rows = document.querySelectorAll("#result-table tr");
+            let csvContent = "";
+
+            rows.forEach(row => {
+                let cells = row.querySelectorAll("th, td");
+                let rowContent = [];
+                cells.forEach(cell => {
+                    rowContent.push(cell.innerText);
+                });
+                csvContent += rowContent.join(",") + "\n";
+            });
+
+            let blob = new Blob([csvContent], { type: "text/csv" });
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "ppm_results.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function printResult() {
+            let printWindow = window.open("", "", "width=800,height=600");
+            printWindow.document.write("<html><head><title>چاپ نتایج</title></head><body style='text-align: center;'>");
+            printWindow.document.write("<h2>" + document.getElementById("datetime").innerText + "</h2>");
+            printWindow.document.write(document.getElementById("result-table").outerHTML);
+            printWindow.document.write("</body></html>");
+            printWindow.document.close();
+            printWindow.print();
+        }
+    </script>
+
+</body>
+</html>
